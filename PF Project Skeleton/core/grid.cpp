@@ -1,62 +1,80 @@
 #include "grid.h"
 #include "simulation_state.h"
 
-// ============================================================================
-// GRID.CPP - Grid utilities
-// ============================================================================
 
-// ----------------------------------------------------------------------------
-// Check if a position is inside the grid.
-// ----------------------------------------------------------------------------
-// Returns true if x,y are within bounds.
-// ----------------------------------------------------------------------------
-bool isInBounds() {
+void FetchgridFromFile(const char* levelfile)
+{
+    ifstream file(levelfile);
+
+    if (!file.is_open())
+     {
+        cout << "Error: cannot open level file!\n";
+        grid_loaded = 0;
+        return;
+    }
+     file >> rows >> cols; //for reading rows and columns from file
+
+       string line;
+
+    getline(file, line); //to remove the leftover lines
+
+     for (int r = 0; r < rows; r++) {   //grid file ma sa fetch krny k lye
+        getline(file, line);//file ma sa line by line read krny k lye
+
+        for (int c = 0; c < cols; c++) {
+            grid[r][c] = line[c];
+        }
+    }
+
+    file.close();
+    grid_loaded = 1;
+}
+void printgrid() //grid print krny k lye
+{
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; c < cols; c++) {
+            cout << grid[r][c];
+        }
+        cout << endl;
+    }
+}
+bool isInBounds(int r, int c) {
+    return r >= 0 && r < rows && c >= 0 && c < cols; //to check whether train is inside the defined grid or not
 }
 
-// ----------------------------------------------------------------------------
-// Check if a tile is a track tile.
-// ----------------------------------------------------------------------------
-// Returns true if the tile can be traversed by trains.
-// ----------------------------------------------------------------------------
-bool isTrackTile() {
+
+
+
+bool isTrackTile(char tile) {
+    return (tile == '-' || tile == '|' || tile == '/' || tile == '\\' || tile == '+');// symbols k lye true return kry ga like +,/
 }
 
-// ----------------------------------------------------------------------------
-// Check if a tile is a switch.
-// ----------------------------------------------------------------------------
-// Returns true if the tile is 'A'..'Z'.
-// ----------------------------------------------------------------------------
-bool isSwitchTile() {
+
+bool isSwitchTile(char tile) {
+    return (tile >= 'A' && tile <= 'Z');// because switch is represented by capital letters
 }
 
-// ----------------------------------------------------------------------------
-// Get switch index from character.
-// ----------------------------------------------------------------------------
-// Maps 'A'..'Z' to 0..25, else -1.
-// ----------------------------------------------------------------------------
-int getSwitchIndex() {
+
+int getSwitchIndex(char tile) {
+    return tile - 'A';
 }
 
-// ----------------------------------------------------------------------------
-// Check if a position is a spawn point.
-// ----------------------------------------------------------------------------
-// Returns true if x,y is a spawn.
-// ----------------------------------------------------------------------------
-bool isSpawnPoint() {
+ 
+bool isSpawnPoint(char tile) {
+    return (tile == '>' || tile == '<' || tile == '^' || tile == 'v');// cz spawn is represented by <,>,^ etc, that is starting point of the train
 }
 
-// ----------------------------------------------------------------------------
-// Check if a position is a destination.
-// ----------------------------------------------------------------------------
-// Returns true if x,y is a destination.
-// ----------------------------------------------------------------------------
-bool isDestinationPoint() {
+
+bool isDestinationPoint(char tile)
+ {
+    return (tile == 'D'); //D is destination point
 }
 
-// ----------------------------------------------------------------------------
-// Toggle a safety tile.
-// ----------------------------------------------------------------------------
-// Returns true if toggled successfully.
-// ----------------------------------------------------------------------------
-bool toggleSafetyTile() {
+
+bool toggleSafetyTile(char tile)
+ {
+//if (tile == '#') return true;
+    //if (tile == '.') return true;
+
+  //  return false;
 }
