@@ -1,11 +1,8 @@
 #ifndef GRID_H
 #define GRID_H
 
-// ============================================================================
-// GRID.H - Grid manipulation functions
-// ============================================================================
-// Functions for working with the 2D grid map.
-// ============================================================================
+void FetchgridFromFile(const char* levelfile);
+void printgrid();
 
 // Check if a position is within grid bounds
 bool isInBounds();
