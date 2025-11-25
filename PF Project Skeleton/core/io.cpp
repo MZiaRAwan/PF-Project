@@ -77,7 +77,7 @@ bool loadLevelFile()
             {
                 switch_x[total_switches] = r;
                 switch_y[total_switches] = c;
-                switch_state[total_switches] = 0;  // default
+                switch_state[total_switches] = 0;  
                 total_switches++;
             }
         }
@@ -87,15 +87,25 @@ bool loadLevelFile()
     grid_loaded = 1;
     return true;
 }
+void initializeLogFiles() {// these lines creates the file if it doesn’t exist, or clears it if it already exists.
+ofstream trainLog("train_log.csv");  //trainLog file where train positions will be saved
+ ofstream switchLog("switch_log.csv");// switchLog file where switch events will be saved
+ofstream crashLog("crash_log.csv");// crashLog file where crash data will be saved
+ofstream arrivalLog("arrival_log.csv");// arrivalLog  file where arrivals will be saved
 
 
-// ----------------------------------------------------------------------------
-// INITIALIZE LOG FILES
-// ----------------------------------------------------------------------------
-// Create/clear CSV logs with headers.
-// ----------------------------------------------------------------------------
-void initializeLogFiles() {
-}
+trainLog << "tick,id,x,y,dir\n";
+switchLog << "tick,id,row,col,state\n"; // writing headers to csv files 
+crashLog << "tick,x,y\n";  // it means that these csv files are going to store these things inside them
+arrivalLog << "tick,trainID\n";
+
+trainLog.close();  // We only opened the files to create/clear them and add headers.
+switchLog.close();   //We close them now.
+crashLog.close();  //Later, other functions will open them again  to add more rows.
+arrivalLog.close();
+}                                     
+                                           
+                                            
 
 // ----------------------------------------------------------------------------
 // LOG TRAIN TRACE
