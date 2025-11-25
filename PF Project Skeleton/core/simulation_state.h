@@ -96,6 +96,7 @@ extern int grid_loaded;
 extern int track_count;
 extern int spawn_count;
 extern int dest_count_grid;
+extern int currentTick;
 
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: METRICS

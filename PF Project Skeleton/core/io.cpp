@@ -16,10 +16,9 @@ bool loadLevelFile()
 
     string line;
 
-    
     while (getline(file, line))
     {
-        if (line == "ROWS:") //for reading rows from file
+        if (line == "ROWS:") // for reading rows from file
         {
             getline(file, line);
             rows = stoi(line);
@@ -45,11 +44,10 @@ bool loadLevelFile()
         getline(file, line);
 
         // Fill shorter lines with spaces
-       while (line.length() < (size_t)cols) //size_t is alternative of int
-{
-    line += ' ';
-}
-
+        while (line.length() < (size_t)cols) // size_t is alternative of int
+        {
+            line += ' ';
+        }
 
         for (int c = 0; c < cols; c++)
         {
@@ -77,7 +75,7 @@ bool loadLevelFile()
             {
                 switch_x[total_switches] = r;
                 switch_y[total_switches] = c;
-                switch_state[total_switches] = 0;  
+                switch_state[total_switches] = 0; // default
                 total_switches++;
             }
         }
@@ -87,32 +85,23 @@ bool loadLevelFile()
     grid_loaded = 1;
     return true;
 }
-void initializeLogFiles() {// these lines creates the file if it doesn’t exist, or clears it if it already exists.
-ofstream trainLog("train_log.csv");  //trainLog file where train positions will be saved
- ofstream switchLog("switch_log.csv");// switchLog file where switch events will be saved
-ofstream crashLog("crash_log.csv");// crashLog file where crash data will be saved
-ofstream arrivalLog("arrival_log.csv");// arrivalLog  file where arrivals will be saved
 
-
-trainLog << "tick,id,x,y,dir\n";
-switchLog << "tick,id,row,col,state\n"; // writing headers to csv files 
-crashLog << "tick,x,y\n";  // it means that these csv files are going to store these things inside them
-arrivalLog << "tick,trainID\n";
-
-trainLog.close();  // We only opened the files to create/clear them and add headers.
-switchLog.close();   //We close them now.
-crashLog.close();  //Later, other functions will open them again  to add more rows.
-arrivalLog.close();
-}                                     
-                                           
-                                            
+// ----------------------------------------------------------------------------
+// INITIALIZE LOG FILES
+// ----------------------------------------------------------------------------
+// Create/clear CSV logs with headers.
+// ----------------------------------------------------------------------------
+void initializeLogFiles()
+{
+}
 
 // ----------------------------------------------------------------------------
 // LOG TRAIN TRACE
 // ----------------------------------------------------------------------------
 // Append tick, train id, position, direction, state to trace.csv.
 // ----------------------------------------------------------------------------
-void logTrainTrace() {
+void logTrainTrace()
+{
 }
 
 // ----------------------------------------------------------------------------
@@ -120,7 +109,40 @@ void logTrainTrace() {
 // ----------------------------------------------------------------------------
 // Append tick, switch id/mode/state to switches.csv.
 // ----------------------------------------------------------------------------
-void logSwitchState() {
+
+void logSwitchState()
+{
+    // using static so memory doesnot delete after use
+    static int prev_state[max_switches];
+    static bool initialized = false;
+
+    if (!initialized)
+    {
+        for (int i = 0; i < total_switches; ++i)
+        {
+            prev_state[i] = switch_state[i];
+        }
+        initialized = true;
+    }
+
+    // Check every switch each tick
+    for (int i = 0; i < total_switches; ++i)
+    {
+        int sx = switch_x[i];          // switch row
+        int sy = switch_y[i];          // switch column
+        int current = switch_state[i]; // 0 = straight, 1 = turn
+
+        // If the switch changed since last tick
+        if (current != prev_state[i])
+        {
+            // Tell the logger (replace with your actual logging function)
+            // Format: (tick, switchID, row, col, state)
+            recordSwitchEvent(currentTick, i, sx, sy, current);
+
+            // Update previous state memory
+            prev_state[i] = current;
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -128,7 +150,32 @@ void logSwitchState() {
 // ----------------------------------------------------------------------------
 // Append tick, switch id, signal color to signals.csv.
 // ----------------------------------------------------------------------------
-void logSignalState() {
+
+void logSignalState()
+{
+    ofstream file("signals.csv", ios::app);
+
+    if (!file.is_open())
+        return;
+
+    for (int i = 0; i < total_switches; i++)
+    {
+        int state = switch_state[i];
+
+        // Convert number → text
+        string color;
+        if (state == signal_green)
+            color = "GREEN";
+        else if (state == signal_yellow)
+            color = "YELLOW";
+        else
+            color = "RED";
+
+        // Write to file
+        file << currentTick << "," << i << "," << color << "\n";
+    }
+
+    file.close();
 }
 
 // ----------------------------------------------------------------------------
@@ -136,5 +183,18 @@ void logSignalState() {
 // ----------------------------------------------------------------------------
 // Write summary metrics to metrics.txt.
 // ----------------------------------------------------------------------------
-void writeMetrics() {
+
+void writeMetrics()
+{
+    ofstream out("metrics.txt") if (!out.is_open()) return;
+    out << "TOTAL_ARRIVALS: " << arrival << "\n";
+    out << "TOTAL_CRASHES: " << crashes << "\n";
+    out << "FINISHED: " << (finished ? "YES" : "NO") << "\n";
+
+    out << "TOTAL_TRAINS: " << total_trains << "\n";
+    out << "TOTAL_SWITCHES: " << total_switches << "\n";
+    out << "TOTAL_SPAWNS: " << total_spawns << "\n";
+    out << "TOTAL_DESTINATIONS: " << total_destinations << "\n";
+
+    out.close();
 }

@@ -35,6 +35,7 @@ int grid_loaded;
 int track_count;          
 int spawn_count;         
 int dest_count_grid;
+int currentTick;
 
 int arrival;
 int crashes;
@@ -119,6 +120,7 @@ void reset_parameters()
     track_count = 0;
     spawn_count = 0;
     dest_count_grid = 0;
+    currentTick = 0;
 }
 
 // ----------------------------------------------------------------------------
