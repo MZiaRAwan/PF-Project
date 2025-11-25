@@ -20,15 +20,23 @@ void FetchgridFromFile(const char* levelfile)
 
      for (int r = 0; r < rows; r++) {   //grid file ma sa fetch krny k lye
         getline(file, line);//file ma sa line by line read krny k lye
+        
+     while (line.length() < cols) { // If the line is shorter than the number of columnsit fills the rest with spaces
+         line += ' ';
+         }
+         if (line.length() > cols) {   //for trimming long lines
+        line = line.substr(0, cols);
+}
 
+      
         for (int c = 0; c < cols; c++) {
             grid[r][c] = line[c];
         }
-    }
+     }
 
     file.close();
     grid_loaded = 1;
-}
+    }
 void printgrid() //grid print krny k lye
 {
     for (int r = 0; r < rows; r++) {
@@ -73,8 +81,5 @@ bool isDestinationPoint(char tile)
 
 bool toggleSafetyTile(char tile)
  {
-//if (tile == '#') return true;
-    //if (tile == '.') return true;
-
-  //  return false;
+ return (tile == '#' || tile == '.');
 }
