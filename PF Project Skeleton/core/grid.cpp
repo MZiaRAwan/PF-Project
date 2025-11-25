@@ -2,50 +2,6 @@
 #include "simulation_state.h"
 
 
-void FetchgridFromFile(const char* levelfile)
-{
-    ifstream file(levelfile);
-
-    if (!file.is_open())
-     {
-        cout << "Error: cannot open level file!\n";
-        grid_loaded = 0;
-        return;
-    }
-     file >> rows >> cols; //for reading rows and columns from file
-
-       string line;
-
-    getline(file, line); //to remove the leftover lines
-
-     for (int r = 0; r < rows; r++) {   //grid file ma sa fetch krny k lye
-        getline(file, line);//file ma sa line by line read krny k lye
-        
-     while (line.length() < cols) { // If the line is shorter than the number of columnsit fills the rest with spaces
-         line += ' ';
-         }
-         if (line.length() > cols) {   //for trimming long lines
-        line = line.substr(0, cols);
-}
-
-      
-        for (int c = 0; c < cols; c++) {
-            grid[r][c] = line[c];
-        }
-     }
-
-    file.close();
-    grid_loaded = 1;
-    }
-void printgrid() //grid print krny k lye
-{
-    for (int r = 0; r < rows; r++) {
-        for (int c = 0; c < cols; c++) {
-            cout << grid[r][c];
-        }
-        cout << endl;
-    }
-}
 bool isInBounds(int r, int c) {
     return r >= 0 && r < rows && c >= 0 && c < cols; //to check whether train is inside the defined grid or not
 }
