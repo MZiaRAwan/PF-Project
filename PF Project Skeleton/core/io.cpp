@@ -121,38 +121,43 @@ void logTrainTrace()
 
 void logSwitchState()
 {
-    // using static so memory doesnot delete after use
     static int prev_state[max_switches];
-    static bool initialized = false;
+    static bool firstTime = true;
 
-    if (!initialized)
+    if (firstTime)
     {
-        for (int i = 0; i < total_switches; ++i)
+        for (int i = 0; i < total_switches; i++)
         {
             prev_state[i] = switch_state[i];
         }
-        initialized = true;
+        firstTime = false;
     }
 
-    // Check every switch each tick
-    for (int i = 0; i < total_switches; ++i)
+    // Open file in append mode
+    ofstream file("switch_log.csv", ios::app);
+    if (!file.is_open()) return;
+
+    // Check every switch
+    for (int i = 0; i < total_switches; i++)
     {
-        int sx = switch_x[i];          // switch row
-        int sy = switch_y[i];          // switch column
-        int current = switch_state[i]; // 0 = straight, 1 = turn
+        int cur = switch_state[i];
 
-        // If the switch changed since last tick
-        if (current != prev_state[i])
+        // Only log if the switch changed
+        if (cur != prev_state[i])
         {
-            // Tell the logger (replace with your actual logging function)
-            // Format: (tick, switchID, row, col, state)
-            recordSwitchEvent(currentTick, i, sx, sy, current);
+            file << currentTick << ","   
+                 << i << ","        
+                 << switch_x[i] << ","   
+                 << switch_y[i] << ","   
+                 << cur << "\n";      
 
-            // Update previous state memory
-            prev_state[i] = current;
+            prev_state[i] = cur;         
         }
     }
+
+    file.close();
 }
+
 
 // ----------------------------------------------------------------------------
 // LOG SIGNAL STATE
