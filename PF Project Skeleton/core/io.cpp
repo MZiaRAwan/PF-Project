@@ -109,8 +109,29 @@ arrivalLog.close();
 // ----------------------------------------------------------------------------
 // Append tick, train id, position, direction, state to trace.csv.
 // ----------------------------------------------------------------------------
-void logTrainTrace()
+void logTrainTrace()// this function opens the log train.csv file and writes inside tick, id, x,y ,direction and tick number of train
 {
+    void logTrainTrace()
+{
+    ofstream file("train_log.csv", ios::app);
+    if (!file.is_open()) 
+    return;  //  here return; returns nothing but only ends the functions early so to protect from crash
+
+    for (int i = 0; i < total_trains; i++)
+    {
+        if (!train_active[i])
+            continue;  // skips those trains that are not active
+
+        file << currentTick << ","   // reading all the information about train
+             << i << ","
+             << train_x[i] << ","
+             << train_y[i] << ","
+             << train_dir[i] << "\n";
+    }
+
+    file.close();
+}
+
 }
 
 // ----------------------------------------------------------------------------
@@ -167,7 +188,9 @@ void logSwitchState()
 
 void logSignalState()
 {
-    ofstream file("signals.csv", ios::app);
+    ofstream file("signals.csv", ios::app);  //ios::app means append mode ,new data is added at the end.
+
+
 
     if (!file.is_open())
         return;
