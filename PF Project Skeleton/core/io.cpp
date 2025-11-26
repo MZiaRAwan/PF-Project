@@ -109,8 +109,8 @@ arrivalLog.close();
 // ----------------------------------------------------------------------------
 // Append tick, train id, position, direction, state to trace.csv.
 // ----------------------------------------------------------------------------
-void logTrainTrace()// this function opens the log train.csv file and writes inside tick, id, x,y ,direction and tick number of train
-{
+// this function opens the log train.csv file and writes inside tick, id, x,y ,direction and tick number of train
+
     void logTrainTrace()
 {
     ofstream file("train_log.csv", ios::app);
@@ -132,7 +132,7 @@ void logTrainTrace()// this function opens the log train.csv file and writes ins
     file.close();
 }
 
-}
+
 
 // ----------------------------------------------------------------------------
 // LOG SWITCH STATE
