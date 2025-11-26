@@ -5,9 +5,11 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
+using namespace std;
 bool loadLevelFile()
 {
-    ifstream file(level_file);
+    ifstream file("/home/ibrahim/Documents/GitHub/PF-Project/PF Project Skeleton/data/levels/complex_network.lvl");
     if (!file.is_open())
     {
         grid_loaded = 0;
@@ -113,7 +115,7 @@ arrivalLog.close();
 
     void logTrainTrace()
 {
-    ofstream file("train_log.csv", ios::app);
+    ofstream file("trace.csv", ios::app);
     if (!file.is_open()) 
     return;  //  here return; returns nothing but only ends the functions early so to protect from crash
 
@@ -155,7 +157,7 @@ void logSwitchState()
     }
 
     // Open file in append mode
-    ofstream file("switch_log.csv", ios::app);
+    ofstream file("switches.csv", ios::app);
     if (!file.is_open()) return;
 
     // Check every switch
@@ -223,7 +225,9 @@ void logSignalState()
 
 void writeMetrics()
 {
-    ofstream out("metrics.txt") if (!out.is_open()) return;
+    ofstream out("metrics.txt"); 
+    if (!out.is_open()) 
+        return;
     out << "TOTAL_ARRIVALS: " << arrival << "\n";
     out << "TOTAL_CRASHES: " << crashes << "\n";
     out << "FINISHED: " << (finished ? "YES" : "NO") << "\n";
