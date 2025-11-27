@@ -5,11 +5,10 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
-#include <string>
 using namespace std;
 bool loadLevelFile()
 {
-    ifstream file("/home/zia/Documents/GitHub/PF-Project/PF Project Skeleton/data/levels/medium_level.lvl");
+    ifstream file("/home/ibrahim/Documents/GitHub/PF-Project/PF Project Skeleton/data/levels/medium_level.lvl");
     if (!file.is_open())
     {
         grid_loaded = 0;
