@@ -5,10 +5,11 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>   
 using namespace std;
 bool loadLevelFile()
 {
-    ifstream file("/home/zia/Documents/GitHub/PF-Project/PF Project Skeleton/data/levels/medium_level.lvl");
+    ifstream file("/home/zia/Documents/GitHub/PF-Project/PF Project Skeleton/data/levels/complex_network.lvl");
     if (!file.is_open())
     {
         grid_loaded = 0;
@@ -16,7 +17,9 @@ bool loadLevelFile()
     }
 
     string line;
-
+    total_spawns = 0;
+    total_destinations = 0;
+    total_switches = 0;
     
     while (getline(file, line))
     {
@@ -82,6 +85,46 @@ bool loadLevelFile()
                 total_switches++;
             }
         }
+    }
+     while (getline(file, line))
+    {
+        if (line == "SWITCHES:")
+            break;
+    }
+     // READ SWITCH DETAILS
+    while (getline(file, line))
+    {
+        if (line == "TRAINS:" || line == "")
+            break;
+
+        char id;
+        string mode;
+        int init;
+        int ku, kr, kd, kl;
+        string s0, s1;
+
+        stringstream ss(line);
+        ss >> id >> mode >> init >> ku >> kr >> kd >> kl >> s0 >> s1;
+
+        int idx = id - 'A';
+       if (idx < 0 || idx >= total_switches)
+        continue; 
+
+
+        switch_mode[idx] = (mode == "GLOBAL") ? 1 : 0;
+
+        switch_init[idx] = init;
+
+        switch_k_up[idx] = ku;
+        switch_k_right[idx] = kr;
+        switch_k_down[idx] = kd;
+        switch_k_left[idx] = kl;
+
+        switch_state0[idx] = s0;
+        switch_state1[idx] = s1;
+
+        // Initial state
+        switch_state[idx] = init;
     }
 
     file.close();

@@ -2,6 +2,7 @@
 #include "io.h"
 #include "grid.h"
 #include <iostream>
+#include<sstream>
 using namespace std;
 
 void printGrid()
