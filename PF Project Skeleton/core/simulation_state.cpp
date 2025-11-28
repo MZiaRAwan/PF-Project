@@ -20,8 +20,10 @@ int switch_x[max_switches];
 int switch_y[max_switches];
 int switch_state[max_switches];
 int switch_flip[max_switches];
+int switch_signal[max_switches];
+int switch_counter[max_switches]; 
+int switch_k[max_switches]; 
 int total_switches;
-int switch_index[max_switches];
 
 int spawn_x[max_trains];
 int spawn_y[max_trains];
@@ -89,7 +91,9 @@ void reset_switches()
         switch_y[i] = 0;
         switch_state[i] = 0;
         switch_flip[i] = 0;
-        switch_index[i] = 0;
+        switch_signal[i] = signal_green;
+        switch_counter[i] = 0;
+        switch_k[i] = 1; 
     }
 }
 

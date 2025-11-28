@@ -69,7 +69,9 @@ extern int switch_x[max_switches];
 extern int switch_y[max_switches];
 extern int switch_state[max_switches];
 extern int switch_flip[max_switches];
-extern int switch_index[max_switches];
+extern int switch_signal[max_switches];
+extern int switch_counter[max_switches]; 
+extern int switch_k[max_switches]; 
 extern int total_switches;
 
 // ----------------------------------------------------------------------------

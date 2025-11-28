@@ -39,6 +39,6 @@ void toggleSwitchState();
 // HELPER FUNCTIONS
 // ----------------------------------------------------------------------------
 // Get state for a given direction.
-int getSwitchStateForDirection();
+int getSwitchStateForDirection(int index);
 
 #endif
