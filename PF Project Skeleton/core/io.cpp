@@ -2,16 +2,14 @@
 #include "simulation_state.h"
 #include "grid.h"
 #include <fstream>
-#include <cstring>
-#include <cstdio>
-#include <cstdlib>
-#include <sstream>   
+#include <sstream>
+#include <string>
 using namespace std;
+
 bool loadLevelFile()
 {
     ifstream file("/home/zia/Documents/GitHub/PF-Project/PF Project Skeleton/data/levels/complex_network.lvl");
-    if (!file.is_open())
-    {
+    if (!file.is_open()) {
         grid_loaded = 0;
         return false;
     }
@@ -20,47 +18,75 @@ bool loadLevelFile()
     total_spawns = 0;
     total_destinations = 0;
     total_switches = 0;
-    
+
+    for (int i = 0; i < max_switches; i++)
+    {
+        switch_x[i] = -1;
+        switch_y[i] = -1;
+
+        switch_mode[i] = 0;
+        switch_init[i] = 0;
+
+        switch_k_up[i] = 0;
+        switch_k_right[i] = 0;
+        switch_k_down[i] = 0;
+        switch_k_left[i] = 0;
+
+        switch_state0[i] = "";
+        switch_state1[i] = "";
+
+        switch_state[i] = 0;
+        switch_index[i] = i;
+    }
+
+    // ============================================
+    // READ ROWS
+    // ============================================
     while (getline(file, line))
     {
-        if (line == "ROWS:") //for reading rows from file
+        if (line == "ROWS:")
         {
             getline(file, line);
             rows = stoi(line);
             break;
         }
     }
+
+    // ============================================
+    // READ COLS
+    // ============================================
     while (getline(file, line))
     {
-        if (line == "COLS:") // for reading columns from file
+        if (line == "COLS:")
         {
             getline(file, line);
-            cols = stoi(line); // stoi converts string to int because row and columns are intgers but are read as string
+            cols = stoi(line);
             break;
         }
     }
+
+    // ============================================
+    // FIND MAP HEADER
+    // ============================================
     while (getline(file, line))
-    {
-        if (line == "MAP:") // for reading grid from files
+        if (line == "MAP:")
             break;
-    }
+
+    // ============================================
+    // READ MAP CONTENT
+    // ============================================
     for (int r = 0; r < rows; r++)
     {
         getline(file, line);
-
-        // Fill shorter lines with spaces
-       while (line.length() < (size_t)cols) //size_t is alternative of int
-{
-    line += ' ';
-}
-
+        while (line.length() < (size_t)cols)
+            line += ' ';
 
         for (int c = 0; c < cols; c++)
         {
             char cell = line[c];
             grid[r][c] = cell;
 
-            // Detect Spawn Points ('S')
+            // SPAWNS
             if (cell == 'S')
             {
                 spawn_x[total_spawns] = r;
@@ -68,7 +94,7 @@ bool loadLevelFile()
                 total_spawns++;
             }
 
-            // Detect Destination ('D' or 'E')
+            // DESTINATIONS
             if (cell == 'D' || cell == 'E')
             {
                 dest_X[total_destinations] = r;
@@ -76,208 +102,176 @@ bool loadLevelFile()
                 total_destinations++;
             }
 
-            // Detect Switches (A–Z)
+            // SWITCH LETTERS
             if (cell >= 'A' && cell <= 'Z')
             {
-                switch_x[total_switches] = r;
-                switch_y[total_switches] = c;
-                switch_state[total_switches] = 0;  
-                total_switches++;
+                int idx = cell - 'A';
+                switch_x[idx] = r;
+                switch_y[idx] = c;
             }
         }
     }
-     while (getline(file, line))
-    {
-        if (line == "SWITCHES:")
-            break;
-    }
-     // READ SWITCH DETAILS
-    while (getline(file, line))
-    {
-        if (line == "TRAINS:" || line == "")
-            break;
 
-        char id;
-        string mode;
-        int init;
-        int ku, kr, kd, kl;
-        string s0, s1;
+    // ============================================
+    // FIND SWITCHES:
+    // ============================================
+// ============================================
+// READ SWITCHES ONLY (NO TRAINS AT ALL)
+// ============================================
 
-        stringstream ss(line);
-        ss >> id >> mode >> init >> ku >> kr >> kd >> kl >> s0 >> s1;
-
-        int idx = id - 'A';
-       if (idx < 0 || idx >= total_switches)
-        continue; 
-
-
-        switch_mode[idx] = (mode == "GLOBAL") ? 1 : 0;
-
-        switch_init[idx] = init;
-
-        switch_k_up[idx] = ku;
-        switch_k_right[idx] = kr;
-        switch_k_down[idx] = kd;
-        switch_k_left[idx] = kl;
-
-        switch_state0[idx] = s0;
-        switch_state1[idx] = s1;
-
-        // Initial state
-        switch_state[idx] = init;
-    }
-       file.close();
-    grid_loaded = 1;
-    return true;
+while (getline(file, line)) {
+    if (line == "SWITCHES:")
+        break;
 }
-void initializeLogFiles() {// these lines creates the file if it doesn’t exist, or clears it if it already exists.
-ofstream trainLog("train_log.csv");  //trainLog file where train positions will be saved
- ofstream switchLog("switch_log.csv");// switchLog file where switch events will be saved
-ofstream crashLog("crash_log.csv");// crashLog file where crash data will be saved
-ofstream arrivalLog("arrival_log.csv");// arrivalLog  file where arrivals will be saved
+
+// ------- READ SWITCH DEFINITIONS -------
+while (getline(file, line)) {
+
+    // Stop BEFORE TRAINS SECTION
+    if (line == "TRAINS:")
+        break;
+
+    // Skip empty lines
+    if (line.find_first_not_of(" \t\r\n") == string::npos)
+        continue;
+
+    char id;
+    string modeStr;
+    int init, ku, kr, kd, kl;
+    string s0, s1;
+
+    stringstream ss(line);
+
+    // If parsing fails → skip line
+    if (!(ss >> id >> modeStr >> init >> ku >> kr >> kd >> kl >> s0 >> s1))
+        continue;
+
+    // Valid switch ID must be A–Z
+    if (id < 'A' || id > 'Z')
+        continue;
+
+    int idx = id - 'A';
+
+    // STORE SWITCH DATA
+    switch_mode[idx]  = (modeStr == "GLOBAL") ? 1 : 0;
+    switch_init[idx]  = init;
+
+    switch_k_up[idx]    = ku;
+    switch_k_right[idx] = kr;
+    switch_k_down[idx]  = kd;
+    switch_k_left[idx]  = kl;
+
+    switch_state0[idx] = s0;
+    switch_state1[idx] = s1;
+
+    switch_state[idx]  = init;
+}
+
+// ============================================
+// COUNT SWITCHES FOUND IN MAP ONLY
+// ============================================
+total_switches = 0;
+for (int i = 0; i < max_switches; i++) {
+    if (switch_x[i] != -1)
+        total_switches++;
+}
+
+grid_loaded = 1;
+return true;
+
+}
 
 
-trainLog << "tick,id,x,y,dir\n";
-switchLog << "tick,id,row,col,state\n"; // writing headers to csv files 
-crashLog << "tick,x,y\n";  // it means that these csv files are going to store these things inside them
-arrivalLog << "tick,trainID\n";
+// =============================================
+// LOGGING FUNCTIONS
+// =============================================
+void initializeLogFiles()
+{
+    ofstream trainLog("train_log.csv");
+    ofstream switchLog("switch_log.csv");
+    ofstream crashLog("crash_log.csv");
+    ofstream arrivalLog("arrival_log.csv");
 
-trainLog.close();  // We only opened the files to create/clear them and add headers.
-switchLog.close();   //We close them now.
-crashLog.close();  //Later, other functions will open them again  to add more rows.
-arrivalLog.close();
-}                    
-// ----------------------------------------------------------------------------
-// LOG TRAIN TRACE
-// ----------------------------------------------------------------------------
-// Append tick, train id, position, direction, state to trace.csv.
-// ----------------------------------------------------------------------------
-// this function opens the log train.csv file and writes inside tick, id, x,y ,direction and tick number of train
+    trainLog  << "tick,id,x,y,dir\n";
+    switchLog << "tick,id,row,col,state\n";
+    crashLog  << "tick,x,y\n";
+    arrivalLog<< "tick,trainID\n";
+}
 
-    void logTrainTrace()
+void logTrainTrace()
 {
     ofstream file("trace.csv", ios::app);
-    if (!file.is_open()) 
-    return;  //  here return; returns nothing but only ends the functions early so to protect from crash
+    if (!file.is_open()) return;
 
     for (int i = 0; i < total_trains; i++)
     {
-        if (!train_active[i])
-            continue;  // skips those trains that are not active
+        if (!train_active[i]) continue;
 
-        file << currentTick << ","   // reading all the information about train
-             << i << ","
-             << train_x[i] << ","
-             << train_y[i] << ","
-             << train_dir[i] << "\n";
+        file   << currentTick << ","
+               << i << ","
+               << train_x[i] << ","
+               << train_y[i] << ","
+               << train_dir[i] << "\n";
     }
-
-    file.close();
 }
-
-
-
-// ----------------------------------------------------------------------------
-// LOG SWITCH STATE
-// ----------------------------------------------------------------------------
-// Append tick, switch id/mode/state to switches.csv.
-// ----------------------------------------------------------------------------
 
 void logSwitchState()
 {
-    static int prev_state[max_switches];
-    static bool firstTime = true;
+    static int prev[max_switches];
+    static bool first = true;
 
-    if (firstTime)
+    if (first)
     {
-        for (int i = 0; i < total_switches; i++)
-        {
-            prev_state[i] = switch_state[i];
-        }
-        firstTime = false;
+        for (int i = 0; i < max_switches; i++)
+            prev[i] = switch_state[i];
+        first = false;
     }
 
-    // Open file in append mode
     ofstream file("switches.csv", ios::app);
     if (!file.is_open()) return;
 
-    // Check every switch
     for (int i = 0; i < total_switches; i++)
     {
-        int cur = switch_state[i];
-
-        // Only log if the switch changed
-        if (cur != prev_state[i])
+        if (switch_state[i] != prev[i])
         {
-            file << currentTick << ","   
-                 << i << ","        
-                 << switch_x[i] << ","   
-                 << switch_y[i] << ","   
-                 << cur << "\n";      
+            file << currentTick << ","
+                 << i << ","
+                 << switch_x[i] << ","
+                 << switch_y[i] << ","
+                 << switch_state[i] << "\n";
 
-            prev_state[i] = cur;         
+            prev[i] = switch_state[i];
         }
     }
-
-    file.close();
 }
-
-
-// ----------------------------------------------------------------------------
-// LOG SIGNAL STATE
-// ----------------------------------------------------------------------------
-// Append tick, switch id, signal color to signals.csv.
-// ----------------------------------------------------------------------------
 
 void logSignalState()
 {
-    ofstream file("signals.csv", ios::app);  //ios::app means append mode ,new data is added at the end.
-
-
-
-    if (!file.is_open())
-        return;
+    ofstream file("signals.csv", ios::app);
+    if (!file.is_open()) return;
 
     for (int i = 0; i < total_switches; i++)
     {
-        int state = switch_state[i];
+        int s = switch_state[i];
+        string color =
+            (s == signal_green)  ? "GREEN" :
+            (s == signal_yellow) ? "YELLOW" :
+                                   "RED";
 
-        // Convert number → text
-        string color;
-        if (state == signal_green)
-            color = "GREEN";
-        else if (state == signal_yellow)
-            color = "YELLOW";
-        else
-            color = "RED";
-
-        // Write to file
         file << currentTick << "," << i << "," << color << "\n";
     }
-
-    file.close();
 }
-
-// ----------------------------------------------------------------------------
-// WRITE FINAL METRICS
-// ----------------------------------------------------------------------------
-// Write summary metrics to metrics.txt.
-// ----------------------------------------------------------------------------
 
 void writeMetrics()
 {
-    ofstream out("metrics.txt"); 
-    if (!out.is_open()) 
-        return;
+    ofstream out("metrics.txt");
+    if (!out.is_open()) return;
+
     out << "TOTAL_ARRIVALS: " << arrival << "\n";
     out << "TOTAL_CRASHES: " << crashes << "\n";
     out << "FINISHED: " << (finished ? "YES" : "NO") << "\n";
-
     out << "TOTAL_TRAINS: " << total_trains << "\n";
     out << "TOTAL_SWITCHES: " << total_switches << "\n";
     out << "TOTAL_SPAWNS: " << total_spawns << "\n";
     out << "TOTAL_DESTINATIONS: " << total_destinations << "\n";
-
-    out.close();
 }
-

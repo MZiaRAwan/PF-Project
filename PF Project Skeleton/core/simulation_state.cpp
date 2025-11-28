@@ -92,13 +92,12 @@ void reset_trains()
 void reset_switches()
 {
     total_switches = 0;
-    for (int i = 0; i < max_switches; i++)
-    {
-        switch_x[i] = 0;
-        switch_y[i] = 0;
+    for (int i = 0; i < max_switches; i++) {
+        switch_x[i] = -1; // -1 = not present on map
+        switch_y[i] = -1;
         switch_state[i] = 0;
         switch_flip[i] = 0;
-        switch_index[i] = 0;
+        switch_index[i] = i;
         switch_mode[i] = 0;
         switch_init[i] = 0;
         switch_k_up[i] = 0;
@@ -109,6 +108,8 @@ void reset_switches()
         switch_state1[i] = "";
     }
 }
+
+
 
 // ----------------------------------------------------------------------------
 // SPAWN AND DESTINATION POINTS

@@ -17,8 +17,6 @@ bool isTrackTile(char tile) {
 bool isSwitchTile(char tile) {
     return (tile >= 'A' && tile <= 'Z');// because switch is represented by capital letters
 }
-
-
 int getSwitchIndex(char tile) {
     return tile - 'A';
 }
@@ -30,9 +28,10 @@ bool isSpawnPoint(char tile) {
 
 
 bool isDestinationPoint(char tile)
- {
-    return (tile == 'D'); //D is destination point
+{
+    return (tile == 'D' || tile == 'E');  // E is also a destination in your map
 }
+
 
 
 bool toggleSafetyTile(char tile)
