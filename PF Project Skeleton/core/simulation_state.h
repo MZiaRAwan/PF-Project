@@ -125,6 +125,8 @@ extern bool finished;
 // ----------------------------------------------------------------------------
 
 extern bool emergencyHalt;
+extern int emergencyHaltTimer; 
+extern int emergencyHaltDuration;
 
 // ----------------------------------------------------------------------------
 // INITIALIZATION FUNCTION

@@ -89,5 +89,19 @@ void applyEmergencyHalt() {
 // ----------------------------------------------------------------------------
 // Decrement timer and disable when done.
 // ----------------------------------------------------------------------------
-void updateEmergencyHalt() {
+void updateEmergencyHalt()
+{
+    if (emergencyHalt)
+    {
+        if (emergencyHaltTimer > 0)
+        {
+            emergencyHaltTimer--;      // decrease the timer
+        }
+
+        if (emergencyHaltTimer == 0)
+        {
+            emergencyHalt = false;     // deactivate halt
+        }
+    }
 }
+

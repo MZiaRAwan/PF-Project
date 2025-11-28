@@ -51,6 +51,8 @@ int crashes;
 bool finished;
 
 bool emergencyHalt;
+int emergencyHaltTimer = 0;
+int emergencyHaltDuration = 0; 
 
 // ----------------------------------------------------------------------------
 // GRID
@@ -159,6 +161,10 @@ void reset_metrics()
 void reset_emergency()
 {
     emergencyHalt = false;
+    emergencyHaltTimer = 0;
+    emergencyHaltDuration = 0; 
+
+    
 }
 
 // ============================================================================
