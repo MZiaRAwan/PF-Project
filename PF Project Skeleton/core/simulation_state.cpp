@@ -1,6 +1,7 @@
 #include "simulation_state.h"
 #include <cstring>
 
+
 // ============================================================================
 // SIMULATION_STATE.CPP - Global state definitions
 // ============================================================================
@@ -20,10 +21,16 @@ int switch_x[max_switches];
 int switch_y[max_switches];
 int switch_state[max_switches];
 int switch_flip[max_switches];
-int switch_signal[max_switches];
-int switch_counter[max_switches]; 
-int switch_k[max_switches]; 
-int total_switches;
+int switch_index[max_switches];
+int total_switches = 0;
+int switch_mode[max_switches];
+int switch_init[max_switches];
+int switch_k_up[max_switches];
+int switch_k_right[max_switches];
+int switch_k_down[max_switches];
+int switch_k_left[max_switches];
+string switch_state0[max_switches];
+string switch_state1[max_switches];
 
 int spawn_x[max_trains];
 int spawn_y[max_trains];
@@ -85,17 +92,24 @@ void reset_trains()
 void reset_switches()
 {
     total_switches = 0;
-    for (int i = 0; i < max_switches; i++)
-    {
-        switch_x[i] = 0;
-        switch_y[i] = 0;
+    for (int i = 0; i < max_switches; i++) {
+        switch_x[i] = -1; // -1 = not present on map
+        switch_y[i] = -1;
         switch_state[i] = 0;
         switch_flip[i] = 0;
-        switch_signal[i] = signal_green;
-        switch_counter[i] = 0;
-        switch_k[i] = 1; 
+        switch_index[i] = i;
+        switch_mode[i] = 0;
+        switch_init[i] = 0;
+        switch_k_up[i] = 0;
+        switch_k_right[i] = 0;
+        switch_k_down[i] = 0;
+        switch_k_left[i] = 0;
+        switch_state0[i] = "";
+        switch_state1[i] = "";
     }
 }
+
+
 
 // ----------------------------------------------------------------------------
 // SPAWN AND DESTINATION POINTS

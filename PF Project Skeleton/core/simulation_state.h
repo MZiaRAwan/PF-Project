@@ -1,5 +1,7 @@
 #ifndef SIMULATION_STATE_H
 #define SIMULATION_STATE_H
+#include <string>         
+using namespace std;
 
 // ============================================================================
 // SIMULATION_STATE.H - Global constants and state
@@ -24,7 +26,6 @@
 // SWITCH CONSTANTS
 // ----------------------------------------------------------------------------
 
-#define max_switches 26
 
 // ----------------------------------------------------------------------------
 // WEATHER CONSTANTS
@@ -64,15 +65,26 @@ extern int next_train_id;
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: SWITCHES (A-Z mapped to 0-25)
 // ----------------------------------------------------------------------------
+//const int max_switches = 26;
+ 
+const int max_switches = 26;
 
 extern int switch_x[max_switches];
 extern int switch_y[max_switches];
 extern int switch_state[max_switches];
 extern int switch_flip[max_switches];
-extern int switch_signal[max_switches];
-extern int switch_counter[max_switches]; 
-extern int switch_k[max_switches]; 
+extern int switch_index[max_switches];
+extern int switch_mode[max_switches];
+extern int switch_init[max_switches];
+extern int switch_k_up[max_switches];
+extern int switch_k_right[max_switches];
+extern int switch_k_down[max_switches];
+extern int switch_k_left[max_switches];
+extern string switch_state0[max_switches];
+extern string switch_state1[max_switches];
 extern int total_switches;
+
+
 
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: SPAWN POINTS
