@@ -18,28 +18,6 @@ bool loadLevelFile()
     total_spawns = 0;
     total_destinations = 0;
     total_switches = 0;
-
-    for (int i = 0; i < max_switches; i++)
-    {
-        switch_x[i] = -1;
-        switch_y[i] = -1;
-
-        switch_mode[i] = 0;
-        switch_init[i] = 0;
-
-        switch_k_up[i] = 0;
-        switch_k_right[i] = 0;
-        switch_k_down[i] = 0;
-        switch_k_left[i] = 0;
-
-        switch_state0[i] = "";
-        switch_state1[i] = "";
-
-        switch_state[i] = 0;
-        switch_index[i] = i;
-    }
-
-    // ============================================
     // READ ROWS
     // ============================================
     while (getline(file, line))
@@ -95,7 +73,7 @@ bool loadLevelFile()
             }
 
             // DESTINATIONS
-            if (cell == 'D' || cell == 'E')
+            if (cell == 'D' )
             {
                 dest_X[total_destinations] = r;
                 dest_Y[total_destinations] = c;
@@ -112,11 +90,6 @@ bool loadLevelFile()
         }
     }
 
-    // ============================================
-    // FIND SWITCHES:
-    // ============================================
-// ============================================
-// READ SWITCHES ONLY (NO TRAINS AT ALL)
 // ============================================
 
 while (getline(file, line)) {
