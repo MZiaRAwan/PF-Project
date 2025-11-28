@@ -99,6 +99,14 @@ void reset_switches()
         switch_state[i] = 0;
         switch_flip[i] = 0;
         switch_index[i] = 0;
+        switch_mode[i] = 0;
+        switch_init[i] = 0;
+        switch_k_up[i] = 0;
+        switch_k_right[i] = 0;
+        switch_k_down[i] = 0;
+        switch_k_left[i] = 0;
+        switch_state0[i] = "";
+        switch_state1[i] = "";
     }
 }
 

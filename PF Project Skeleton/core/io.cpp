@@ -126,8 +126,7 @@ bool loadLevelFile()
         // Initial state
         switch_state[idx] = init;
     }
-
-    file.close();
+       file.close();
     grid_loaded = 1;
     return true;
 }
@@ -281,3 +280,4 @@ void writeMetrics()
 
     out.close();
 }
+
