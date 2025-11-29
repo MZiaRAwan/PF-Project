@@ -1,6 +1,9 @@
 #ifndef GRID_H
 #define GRID_H
 
+// Print grid with trains (Terminal Output - Phase 7)
+void printGrid();
+
 void printgrid();
 
 // Check if a position is within grid bounds
