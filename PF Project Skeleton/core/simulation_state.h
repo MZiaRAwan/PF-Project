@@ -22,10 +22,17 @@ using namespace std;
 
 #define max_trains 400
 
+// Direction constants
+#define DIR_UP 0
+#define DIR_RIGHT 1
+#define DIR_DOWN 2
+#define DIR_LEFT 3
+
 // ----------------------------------------------------------------------------
 // SWITCH CONSTANTS
 // ----------------------------------------------------------------------------
 
+const int max_switches = 26;
 
 // ----------------------------------------------------------------------------
 // WEATHER CONSTANTS
@@ -59,15 +66,22 @@ extern int train_x[max_trains];
 extern int train_y[max_trains];
 extern int train_dir[max_trains];
 extern bool train_active[max_trains];
+extern int train_spawn_tick[max_trains];
+extern int train_next_x[max_trains];
+extern int train_next_y[max_trains];
+extern int train_next_dir[max_trains];
+extern int train_dest_x[max_trains];
+extern int train_dest_y[max_trains];
+extern bool train_waiting[max_trains];
+extern int train_rain_move_count[max_trains];
+extern int train_rain_waiting[max_trains];
+extern int train_color_index[max_trains];
 extern int total_trains;
 extern int next_train_id;
 
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: SWITCHES (A-Z mapped to 0-25)
 // ----------------------------------------------------------------------------
-//const int max_switches = 26;
- 
-const int max_switches = 26;
 
 extern int switch_x[max_switches];
 extern int switch_y[max_switches];
@@ -82,9 +96,13 @@ extern int switch_k_down[max_switches];
 extern int switch_k_left[max_switches];
 extern string switch_state0[max_switches];
 extern string switch_state1[max_switches];
+extern int switch_counter_up[max_switches];
+extern int switch_counter_right[max_switches];
+extern int switch_counter_down[max_switches];
+extern int switch_counter_left[max_switches];
+extern int switch_counter_global[max_switches];
+extern int switch_signal[max_switches];
 extern int total_switches;
-
-
 
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: SPAWN POINTS
@@ -111,6 +129,10 @@ extern int track_count;
 extern int spawn_count;
 extern int dest_count_grid;
 extern int currentTick;
+extern int weather_type;
+extern int emergencyHaltTimer;
+extern int level_seed;
+extern string level_filename;
 
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: METRICS
@@ -119,6 +141,12 @@ extern int currentTick;
 extern int arrival;
 extern int crashes;
 extern bool finished;
+extern int total_wait_ticks;
+extern int signal_violations;
+extern int total_switch_flips;
+extern int total_train_ticks;
+extern int buffer_count;
+extern int train_idle_ticks[max_trains];
 
 // ----------------------------------------------------------------------------
 // GLOBAL STATE: EMERGENCY HALT
