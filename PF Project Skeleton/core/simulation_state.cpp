@@ -17,6 +17,7 @@ int train_x[max_trains] = {};
 int train_y[max_trains] = {};
 int train_dir[max_trains] = {};
 bool train_active[max_trains] = {};
+bool train_arrived[max_trains] = {};  // check if train has arrived (prevents double counting)
 int train_spawn_tick[max_trains] = {};
 int train_next_x[max_trains] = {};
 int train_next_y[max_trains] = {};
@@ -111,6 +112,7 @@ void reset_trains()
         train_y[i] = 0;
         train_dir[i] = 0;
         train_active[i] = false;
+        train_arrived[i] = false;  // Reset arrival flag
         train_spawn_tick[i] = 0;
         train_next_x[i] = 0;
         train_next_y[i] = 0;
