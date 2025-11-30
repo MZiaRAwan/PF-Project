@@ -4,10 +4,7 @@
 #include "switches.h"
 #include <cstdlib>
 #include <iostream>
-<<<<<<< HEAD
 #include <string>
-=======
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
 using namespace std;
 
 // Train movement and logic
@@ -20,7 +17,6 @@ static int oscil_cnt[max_trains] = {};
 static int last_dist[max_trains] = {};
 static int no_prog_ticks[max_trains] = {};
 
-<<<<<<< HEAD
 // Calculate distance to destination
 int calculateDistanceToDestination(int id)
 {
@@ -523,64 +519,6 @@ void spawnTrainsForTick() {
             // If out of bounds and not first train and not medium/hard, don't spawn (will retry next tick)
         }
         // Otherwise, train will retry next tick (spawn_tick stays the same)
-=======
-// ----------------------------------------------------------------------------
-// HELPER: Calculate Manhattan distance from train to its destination
-// ----------------------------------------------------------------------------
-int calculateDistanceToDestination(int train_id)
-{
-    if (train_dest_x[train_id] < 0 || train_dest_y[train_id] < 0)
-        return 0;
-    
-    return abs(train_x[train_id] - train_dest_x[train_id]) + 
-           abs(train_y[train_id] - train_dest_y[train_id]);
-}
-
-// ----------------------------------------------------------------------------
-// SPAWN TRAINS FOR CURRENT TICK (Phase 1)
-// ----------------------------------------------------------------------------
-// Activate trains scheduled for this tick.
-// If spawn tile is occupied, train waits and retries next tick.
-// ----------------------------------------------------------------------------
-void spawnTrainsForTick() {
-    for (int i = 0; i < total_trains; i++)
-    {
-        // Check if this train is scheduled to spawn at current tick
-        if (train_spawn_tick[i] == currentTick && !train_active[i])
-        {
-            int spawn_x_pos = train_x[i];
-            int spawn_y_pos = train_y[i];
-            
-            // Check if spawn tile is occupied
-            bool spawn_occupied = false;
-            for (int j = 0; j < total_trains; j++)
-            {
-                if (train_active[j] && train_x[j] == spawn_x_pos && train_y[j] == spawn_y_pos)
-                {
-                    spawn_occupied = true;
-                    break;
-                }
-            }
-            
-            // Spawn Rules:
-            // - If spawn tile is occupied, train waits and retries next tick
-            // - If spawn tile is free but next tile is invalid, train still spawns
-            //   (will crash only if it attempts invalid move on movement phase)
-            if (!spawn_occupied)
-            {
-                // Spawn the train - don't validate the tile type
-                // Per spec: train spawns even if next tile is invalid (will crash on movement)
-                train_active[i] = true;
-                
-                // Initialize next position to current position (will be updated in Phase 2)
-                // This prevents crashes from uninitialized values
-                train_next_x[i] = spawn_x_pos;
-                train_next_y[i] = spawn_y_pos;
-                train_next_dir[i] = train_dir[i];
-            }
-            // Otherwise, train will retry next tick (spawn_tick stays the same)
-        }
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
     }
 }
 
@@ -681,17 +619,12 @@ int getNextDirection(int train_id)
         return getSmartDirectionAtCrossing(train_id);
     }
     
-<<<<<<< HEAD
     // Switch: route based on switch state (STRAIGHT or TURN)
-=======
-    // Switch: route based on switch state
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
     if (isSwitchTile(tile))
     {
         int switch_idx = getSwitchIndex(tile);
         if (switch_idx >= 0 && switch_idx < max_switches)
         {
-<<<<<<< HEAD
             int state = switch_state[switch_idx];
             string state_label = (state == 0) ? switch_state0[switch_idx] : switch_state1[switch_idx];
             
@@ -746,9 +679,6 @@ int getNextDirection(int train_id)
                 }
             }
             // Default: keep current direction if state label is unknown
-=======
-            // For now, keep current direction (can be enhanced with switch state routing)
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
             return dir;
         }
     }
@@ -841,8 +771,6 @@ int getSmartDirectionAtCrossing(int train_id)
     if (dist_left < min_dist) { min_dist = dist_left; best_dir = DIR_LEFT; }
     
     return best_dir;
-<<<<<<< HEAD
-=======
 }
 
 // ----------------------------------------------------------------------------
@@ -850,131 +778,6 @@ int getSmartDirectionAtCrossing(int train_id)
 // ----------------------------------------------------------------------------
 // Compute next position/direction from current tile and rules.
 // Returns true if move is valid.
-// ----------------------------------------------------------------------------
-bool determineNextPosition(int train_id)
-{
-    if (!train_active[train_id])
-        return false;
-    
-    int x = train_x[train_id];
-    int y = train_y[train_id];
-    int dir = train_dir[train_id];
-    
-    // Check if train is already at its destination - don't move, will be marked as arrived in Phase 6
-    if (train_dest_x[train_id] >= 0 && train_dest_y[train_id] >= 0)
-    {
-        if (x == train_dest_x[train_id] && y == train_dest_y[train_id])
-        {
-            // Train is at destination - stay in place, will be marked as arrived
-            train_next_x[train_id] = x;
-            train_next_y[train_id] = y;
-            train_next_dir[train_id] = dir;
-            return true;
-        }
-    }
-    
-    // Check if on safety buffer - train waits one tick
-    if (isInBounds(x, y) && grid[x][y] == '=')
-    {
-        if (train_waiting[train_id])
-        {
-            // Wait is over, can move now
-            train_waiting[train_id] = false;
-        }
-        else
-        {
-            // Start waiting
-            train_waiting[train_id] = true;
-            train_next_x[train_id] = x;
-            train_next_y[train_id] = y;
-            train_next_dir[train_id] = dir;
-            return true;
-        }
-    }
-    
-    // If still waiting, don't move
-    if (train_waiting[train_id])
-    {
-        train_next_x[train_id] = x;
-        train_next_y[train_id] = y;
-        train_next_dir[train_id] = dir;
-        return true;
-    }
-    
-    // Weather effect: RAIN - occasional slowdowns (extra wait tick after n moves)
-    if (weather_type == weather_rain)
-    {
-        if (train_rain_waiting[train_id])
-        {
-            // Currently waiting due to rain - skip this move
-            train_rain_waiting[train_id] = false;
-            train_next_x[train_id] = x;
-            train_next_y[train_id] = y;
-            train_next_dir[train_id] = dir;
-            return true;
-        }
-        
-        // Increment move counter
-        train_rain_move_count[train_id]++;
-        
-        // Every 5 moves, trigger a slowdown (pseudo-random based on seed)
-        if (train_rain_move_count[train_id] >= 5)
-        {
-            // 30% chance of slowdown (deterministic based on seed + tick + train_id)
-            int rand_val = (level_seed + currentTick * 1000 + train_id * 100) % 100;
-            if (rand_val < 30)
-            {
-                train_rain_waiting[train_id] = true;
-                train_rain_move_count[train_id] = 0; // Reset counter
-                train_next_x[train_id] = x;
-                train_next_y[train_id] = y;
-                train_next_dir[train_id] = dir;
-                return true;
-            }
-            train_rain_move_count[train_id] = 0; // Reset counter
-        }
-    }
-    
-    // Get next direction based on current tile
-    int next_dir = getNextDirection(train_id);
-    
-    // Calculate next position based on direction
-    int next_x = x;
-    int next_y = y;
-    
-    if (next_dir == DIR_UP) next_x--;
-    else if (next_dir == DIR_RIGHT) next_y++;
-    else if (next_dir == DIR_DOWN) next_x++;
-    else if (next_dir == DIR_LEFT) next_y--;
-    
-    // Check if next position is valid
-    if (!isInBounds(next_x, next_y))
-    {
-        // Invalid move - train will crash
-        train_next_x[train_id] = next_x;
-        train_next_y[train_id] = next_y;
-        train_next_dir[train_id] = next_dir;
-        return false;
-    }
-    
-    // Store planned move
-    train_next_x[train_id] = next_x;
-    train_next_y[train_id] = next_y;
-    train_next_dir[train_id] = next_dir;
-    
-    return true;
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
-}
-
-// ----------------------------------------------------------------------------
-// DETERMINE NEXT POSITION for a train
-// ----------------------------------------------------------------------------
-<<<<<<< HEAD
-// Compute next position/direction from current tile and rules.
-// Returns true if move is valid.
-=======
-// Fill next positions/directions for all active trains.
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
 // ----------------------------------------------------------------------------
 bool determineNextPosition(int train_id)
 {
@@ -1279,7 +1082,6 @@ void determineAllRoutes() {
             determineNextPosition(i);
         }
     }
-<<<<<<< HEAD
 }
 
 // Detect and resolve collisions
@@ -1486,199 +1288,10 @@ void detectCollisions() {
 // Move all trains
 void moveAllTrains() {
     detectCollisions();
-=======
-}
-
-// ----------------------------------------------------------------------------
-// DETECT COLLISIONS WITH PRIORITY SYSTEM
-// ----------------------------------------------------------------------------
-// Resolve same-tile, swap, and crossing conflicts using distance-based priority.
-// Distance Calculation: Manhattan distance (sum of absolute differences in x and y)
-// from train's current position to its assigned destination point.
-// Priority Rule: Train with higher distance to destination gets priority and proceeds,
-// while trains with lower distance wait for the next tick.
-// ----------------------------------------------------------------------------
-void detectCollisions() {
-    // Track which trains have been marked to wait or crash (to avoid double-processing)
-    bool train_processed[max_trains];
-    for (int i = 0; i < total_trains; i++)
-        train_processed[i] = false;
-    
-    // First pass: Handle same-destination and head-on swap collisions (pairwise)
-    for (int i = 0; i < total_trains; i++)
-    {
-        if (!train_active[i] || train_processed[i]) continue;
-        
-        int next_x_i = train_next_x[i];
-        int next_y_i = train_next_y[i];
-        int dist_i = calculateDistanceToDestination(i);
-        
-        // Check for collisions with other trains
-        for (int j = i + 1; j < total_trains; j++)
-        {
-            if (!train_active[j] || train_processed[j]) continue;
-            
-            int next_x_j = train_next_x[j];
-            int next_y_j = train_next_y[j];
-            int dist_j = calculateDistanceToDestination(j);
-            
-            // Same-destination collision: multiple trains targeting same tile
-            // (This includes crossing '+' collisions)
-            if (next_x_i == next_x_j && next_y_i == next_y_j)
-            {
-                if (dist_i > dist_j)
-                {
-                    // Train i has priority (higher distance), train j waits
-                    train_next_x[j] = train_x[j];
-                    train_next_y[j] = train_y[j];
-                    train_next_dir[j] = train_dir[j];
-                    train_processed[j] = true;
-                }
-                else if (dist_j > dist_i)
-                {
-                    // Train j has priority (higher distance), train i waits
-                    train_next_x[i] = train_x[i];
-                    train_next_y[i] = train_y[i];
-                    train_next_dir[i] = train_dir[i];
-                    train_processed[i] = true;
-                }
-                else
-                {
-                    // Equal distance - all involved trains crash
-                    train_active[i] = false;
-                    train_active[j] = false;
-                    train_processed[i] = true;
-                    train_processed[j] = true;
-                    crashes += 2;
-                }
-            }
-            
-            // Head-on swap collision: trains swapping positions
-            else if (next_x_i == train_x[j] && next_y_i == train_y[j] &&
-                     next_x_j == train_x[i] && next_y_j == train_y[i])
-            {
-                if (dist_i > dist_j)
-                {
-                    // Train i has priority (higher distance), train j waits
-                    train_next_x[j] = train_x[j];
-                    train_next_y[j] = train_y[j];
-                    train_next_dir[j] = train_dir[j];
-                    train_processed[j] = true;
-                }
-                else if (dist_j > dist_i)
-                {
-                    // Train j has priority (higher distance), train i waits
-                    train_next_x[i] = train_x[i];
-                    train_next_y[i] = train_y[i];
-                    train_next_dir[i] = train_dir[i];
-                    train_processed[i] = true;
-                }
-                else
-                {
-                    // Equal distance - both crash
-                    train_active[i] = false;
-                    train_active[j] = false;
-                    train_processed[i] = true;
-                    train_processed[j] = true;
-                    crashes += 2;
-                }
-            }
-        }
-    }
-    
-    // Second pass: Handle crossing '+' collisions with 3+ trains
-    // (Pairwise check might miss some cases, so we do a comprehensive check)
-    for (int target_x = 0; target_x < rows; target_x++)
-    {
-        for (int target_y = 0; target_y < cols; target_y++)
-        {
-            if (!isInBounds(target_x, target_y) || grid[target_x][target_y] != '+')
-                continue;
-            
-            // Find all active trains targeting this crossing that haven't been processed
-            int trains_targeting[max_trains];
-            int count = 0;
-            
-            for (int i = 0; i < total_trains; i++)
-            {
-                if (!train_active[i] || train_processed[i]) continue;
-                if (train_next_x[i] == target_x && train_next_y[i] == target_y)
-                {
-                    trains_targeting[count++] = i;
-                }
-            }
-            
-            // If multiple trains target this crossing, resolve using priority
-            if (count > 1)
-            {
-                // Find train with highest distance
-                int max_dist = -1;
-                int priority_train = -1;
-                int same_max_count = 0;
-                
-                for (int k = 0; k < count; k++)
-                {
-                    int dist = calculateDistanceToDestination(trains_targeting[k]);
-                    if (dist > max_dist)
-                    {
-                        max_dist = dist;
-                        priority_train = trains_targeting[k];
-                        same_max_count = 1;
-                    }
-                    else if (dist == max_dist)
-                    {
-                        same_max_count++;
-                    }
-                }
-                
-                if (same_max_count > 1)
-                {
-                    // Equal distance - all involved trains crash
-                    for (int k = 0; k < count; k++)
-                    {
-                        if (calculateDistanceToDestination(trains_targeting[k]) == max_dist)
-                        {
-                            train_active[trains_targeting[k]] = false;
-                            train_processed[trains_targeting[k]] = true;
-                            crashes++;
-                        }
-                    }
-                }
-                else
-                {
-                    // Train with highest distance moves, others wait
-                    for (int k = 0; k < count; k++)
-                    {
-                        if (trains_targeting[k] != priority_train)
-                        {
-                            train_next_x[trains_targeting[k]] = train_x[trains_targeting[k]];
-                            train_next_y[trains_targeting[k]] = train_y[trains_targeting[k]];
-                            train_next_dir[trains_targeting[k]] = train_dir[trains_targeting[k]];
-                            train_processed[trains_targeting[k]] = true;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
-// MOVE ALL TRAINS (PHASE 5)
-// ----------------------------------------------------------------------------
-// Move trains; resolve collisions and apply effects.
-// ----------------------------------------------------------------------------
-void moveAllTrains() {
-    // First, detect and resolve collisions using distance-based priority
-    detectCollisions();
-    
-    // Now move all trains to their planned positions
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
     for (int i = 0; i < total_trains; i++)
     {
         if (!train_active[i]) continue;
         
-<<<<<<< HEAD
         if (train_x[i] == train_dest_x[i] && train_y[i] == train_dest_y[i] && train_dest_x[i] >= 0 && train_dest_y[i] >= 0)
         {
             train_active[i] = false;
@@ -1713,12 +1326,6 @@ void moveAllTrains() {
             continue;
         }
         
-=======
-        // Check if move is valid (within bounds)
-        int next_x = train_next_x[i];
-        int next_y = train_next_y[i];
-        
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
         // If train is staying in place (same position), allow it (might be waiting or just spawned)
         if (next_x == train_x[i] && next_y == train_y[i])
         {
@@ -1728,7 +1335,6 @@ void moveAllTrains() {
             continue;
         }
         
-<<<<<<< HEAD
         int current_dist = abs(train_x[i] - train_dest_x[i]) + abs(train_y[i] - train_dest_y[i]);
         int next_dist = abs(next_x - train_dest_x[i]) + abs(next_y - train_dest_y[i]);
         if (train_dest_x[i] >= 0 && train_dest_y[i] >= 0 && next_dist > current_dist && current_dist <= 2)
@@ -1744,32 +1350,15 @@ void moveAllTrains() {
             train_dir[i] = train_next_dir[i];
             continue;
         }
-=======
-        if (!isInBounds(next_x, next_y))
-        {
-            // Invalid move - train crashes
-            train_active[i] = false;
-            crashes++;
-            continue;
-        }
-        
-        // Check if target tile is a valid track tile
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
         char next_tile = grid[next_x][next_y];
         if (!isTrackTile(next_tile) && next_tile != 'D' && next_tile != 'S' && 
             !isSwitchTile(next_tile) && next_tile != '=')
         {
-<<<<<<< HEAD
             // Invalid tile - train stays in place (wait) instead of crashing
             // This allows train to retry next tick when path becomes available
             train_x[i] = train_x[i]; // Stay in place
             train_y[i] = train_y[i];
             train_dir[i] = train_next_dir[i];
-=======
-            // Invalid tile - train crashes
-            train_active[i] = false;
-            crashes++;
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
             continue;
         }
         
@@ -1798,7 +1387,6 @@ void moveAllTrains() {
         train_y[i] = next_y;
         train_dir[i] = train_next_dir[i];
         
-<<<<<<< HEAD
         if (train_x[i] == train_dest_x[i] && train_y[i] == train_dest_y[i] && train_dest_x[i] >= 0 && train_dest_y[i] >= 0)
         {
             train_active[i] = false;
@@ -1816,8 +1404,6 @@ void moveAllTrains() {
             continue;
         }
         
-=======
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
         // If moved to safety buffer, set waiting flag
         if (next_tile == '=')
         {
@@ -1826,20 +1412,11 @@ void moveAllTrains() {
     }
 }
 
-<<<<<<< HEAD
 // Check train arrivals
-=======
-// ----------------------------------------------------------------------------
-// CHECK ARRIVALS (Phase 7)
-// ----------------------------------------------------------------------------
-// Mark trains that reached destinations.
-// ----------------------------------------------------------------------------
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
 void checkArrivals() {
     for (int i = 0; i < total_trains; i++)
     {
         if (!train_active[i]) continue;
-<<<<<<< HEAD
         if (train_arrived[i]) continue;
         if (train_dest_x[i] >= 0 && train_dest_y[i] >= 0)
         {
@@ -1971,15 +1548,6 @@ void checkArrivals() {
         }
         // If train has no destination assigned, it should still be active
         // (This shouldn't happen, but handle gracefully)
-=======
-        
-        // Check if train reached its destination
-        if (train_x[i] == train_dest_x[i] && train_y[i] == train_dest_y[i])
-        {
-            train_active[i] = false;
-            arrival++;
-        }
->>>>>>> 66cb98c23dcb4ba5b3b61ab50f8f2ed4beb1d20e
     }
 }
 

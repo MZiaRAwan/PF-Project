@@ -7,6 +7,8 @@ CXXFLAGS = -std=c++11 -Wall -Wextra -g
 SFML_FLAGS = -lsfml-graphics -lsfml-window -lsfml-system
 
 # Source files
+# Note: core/main.cpp has been renamed to core/main_test.cpp (testing only, not part of build)
+# We only use sfml/main.cpp as the entry point for the SFML version
 CORE_SRCS = core/simulation_state.cpp core/grid.cpp core/trains.cpp \
             core/switches.cpp core/simulation.cpp core/io.cpp
 SFML_SRCS = sfml/app.cpp sfml/main.cpp
@@ -34,6 +36,7 @@ $(TARGET): $(ALL_OBJS)
 # Clean build artifacts
 clean:
 	rm -f $(ALL_OBJS) $(TARGET)
+	rm -f core/main.o core/main_test.o  # Remove any test main object files if they exist
 	rm -f out/*.csv out/*.txt
 	@echo "Clean complete!"
 
@@ -62,4 +65,3 @@ help:
 	@echo "Read README.md for complete documentation!"
 
 .PHONY: all clean run help
-
