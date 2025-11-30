@@ -9,7 +9,6 @@ using namespace std;
 
 bool loadLevelFile()
 {
-    // Try multiple paths to find the level file
     ifstream file;
     file.open(level_filename);
     if (!file.is_open()) {
@@ -18,11 +17,10 @@ bool loadLevelFile()
     
     if (!file.is_open()) {
         grid_loaded = 0;
-        cerr << "Error: Could not find level file: " << level_filename << "\n";
+        cout << "Error: Could not find level file: " << level_filename << "\n";
         return false;
     }
 
-    // Initialize counters
     total_spawns = 0;
     total_destinations = 0;
     total_switches = 0;
@@ -31,10 +29,8 @@ bool loadLevelFile()
     string line;
     string section = "";
     
-    // Read file line by line
     while (getline(file, line))
     {
-        // Check for section headers
         if (line == "ROWS:")
         {
             getline(file, line);
@@ -65,24 +61,20 @@ bool loadLevelFile()
         else if (line == "MAP:")
         {
             section = "MAP";
-            // Read map rows
             for (int r = 0; r < rows; r++)
             {
                 if (!getline(file, line))
                     break;
                     
-                // Stop if we hit SWITCHES section
                 if (line == "SWITCHES:")
                 {
                     section = "SWITCHES";
                     break;
                 }
                 
-                // Pad line to required length
                 while (line.length() < (size_t)cols)
                     line += ' ';
                 
-                // Process each cell in the row
                 for (int c = 0; c < cols; c++)
                 {
                     char cell = line[c];
@@ -190,45 +182,58 @@ bool loadLevelFile()
 }
 
 
-// =============================================
-// LOGGING FUNCTIONS
-// =============================================
+// Initialize log files
 void initializeLogFiles()
 {
-    // Create output directory if it doesn't exist (simplified - assumes it exists)
-    // Write to out/ directory as per requirements
-    // Try to create files in out/ directory, fallback to current directory
-    ofstream traceLog("out/trace.csv");
-    if (!traceLog.is_open()) traceLog.open("trace.csv");
-    traceLog << "Tick,TrainID,X,Y,Direction,State\n";
-    traceLog.close();
+    ofstream traceLog("out/trace.csv", ios::trunc);
+    if (!traceLog.is_open()) {
+        traceLog.open("trace.csv", ios::trunc);
+    }
+    if (traceLog.is_open()) {
+        traceLog << "Tick,TrainID,X,Y,Direction,State\n";
+        traceLog.close();
+    }
     
-    ofstream switchLog("out/switches.csv");
-    if (!switchLog.is_open()) switchLog.open("switches.csv");
-    switchLog << "Tick,Switch,Mode,State\n";
-    switchLog.close();
+    ofstream switchLog("out/switches.csv", ios::trunc);
+    if (!switchLog.is_open()) {
+        switchLog.open("switches.csv", ios::trunc);
+    }
+    if (switchLog.is_open()) {
+        switchLog << "Tick,Switch,Mode,State\n";
+        switchLog.close();
+    }
     
-    ofstream signalLog("out/signals.csv");
-    if (!signalLog.is_open()) signalLog.open("signals.csv");
-    signalLog << "Tick,Switch,Signal\n";
-    signalLog.close();
+    ofstream signalLog("out/signals.csv", ios::trunc);
+    if (!signalLog.is_open()) {
+        signalLog.open("signals.csv", ios::trunc);
+    }
+    if (signalLog.is_open()) {
+        signalLog << "Tick,Switch,Signal\n";
+        signalLog.close();
+    }
 }
 
 void logTrainTrace()
 {
     ofstream file("out/trace.csv", ios::app);
-    if (!file.is_open()) file.open("trace.csv", ios::app);
+    if (!file.is_open()) {
+        file.open("trace.csv", ios::app);
+    }
     if (!file.is_open()) return;
 
     for (int i = 0; i < total_trains; i++)
     {
-        if (!train_active[i]) continue;
-
-        // Format: Tick,TrainID,X,Y,Direction,State
-        // State: 0=active, 1=arrived, 2=crashed
+        if (train_x[i] < 0 || train_y[i] < 0) continue;
+        
         int state = 0;
-        if (train_x[i] == train_dest_x[i] && train_y[i] == train_dest_y[i])
+        if (train_arrived[i] || (train_x[i] == train_dest_x[i] && train_y[i] == train_dest_y[i] && train_dest_x[i] >= 0))
+        {
             state = 1;
+        }
+        else if (train_active[i])
+        {
+            state = 0;
+        }
         
         file << currentTick << ","
              << i << ","
@@ -237,12 +242,15 @@ void logTrainTrace()
              << train_dir[i] << ","
              << state << "\n";
     }
+    
+    file.close();
 }
 
 void logSwitchState()
 {
     static int prev[max_switches];
     static bool first = true;
+    static bool initial_logged = false;
 
     if (first)
     {
@@ -252,33 +260,52 @@ void logSwitchState()
     }
 
     ofstream file("out/switches.csv", ios::app);
-    if (!file.is_open()) file.open("switches.csv", ios::app);
+    if (!file.is_open()) {
+        file.open("switches.csv", ios::app);
+    }
     if (!file.is_open()) return;
 
-    // Format: Tick,Switch,Mode,State
-    for (int i = 0; i < max_switches; i++)
+    if (!initial_logged && currentTick == 0)
     {
-        if (switch_x[i] < 0) continue; // Skip switches not on map
-        
-        if (switch_state[i] != prev[i])
+        for (int i = 0; i < max_switches; i++)
         {
+            if (switch_x[i] < 0) continue;
+            
             file << currentTick << ","
                  << char('A' + i) << ","
                  << (switch_mode[i] == 1 ? "GLOBAL" : "PER_DIR") << ","
                  << switch_state[i] << "\n";
+        }
+        initial_logged = true;
+    }
+    else
+    {
+        for (int i = 0; i < max_switches; i++)
+        {
+            if (switch_x[i] < 0) continue;
+            if (switch_state[i] != prev[i])
+            {
+                file << currentTick << ","
+                     << char('A' + i) << ","
+                     << (switch_mode[i] == 1 ? "GLOBAL" : "PER_DIR") << ","
+                     << switch_state[i] << "\n";
 
-            prev[i] = switch_state[i];
+                prev[i] = switch_state[i];
+            }
         }
     }
+    
+    file.close();
 }
 
 void logSignalState()
 {
     ofstream file("out/signals.csv", ios::app);
-    if (!file.is_open()) file.open("signals.csv", ios::app);
+    if (!file.is_open()) {
+        file.open("signals.csv", ios::app);
+    }
     if (!file.is_open()) return;
 
-    // Apply fog delay: display previous tick's signal (logic remains correct)
     static int prev_signal[max_switches];
     static bool first = true;
     
@@ -291,14 +318,13 @@ void logSignalState()
     
     for (int i = 0; i < max_switches; i++)
     {
-        if (switch_x[i] < 0) continue; // Skip switches not on map
+        if (switch_x[i] < 0) continue;
         
         int s = switch_signal[i];
         
-        // Fog effect: delay signal display by 1 tick (but logic uses current signal)
         if (weather_type == weather_fog)
         {
-            s = prev_signal[i]; // Display previous tick's signal
+            s = prev_signal[i];
         }
         
         string color =
@@ -308,9 +334,10 @@ void logSignalState()
 
         file << currentTick << "," << char('A' + i) << "," << color << "\n";
         
-        // Update previous signal for next tick
         prev_signal[i] = switch_signal[i];
     }
+    
+    file.close();
 }
 
 void writeMetrics()

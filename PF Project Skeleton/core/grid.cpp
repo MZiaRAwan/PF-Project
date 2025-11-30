@@ -43,7 +43,7 @@ bool toggleSafetyTile(char tile)
  }
 
 // ----------------------------------------------------------------------------
-// PRINT GRID WITH TRAINS (Terminal Output - Phase 7)
+// PRINT GRID WITH TRAINS 
 // ----------------------------------------------------------------------------
 // Print complete grid state showing all tiles, train positions, and switch states.
 // Required: Terminal output at each tick showing grid state.
@@ -100,6 +100,17 @@ void printGrid()
             else if (train_dir[i] == DIR_LEFT) dir_str = "LEFT";
             
             cout << "Train " << i << " at (" << train_x[i] << "," << train_y[i] << ") moving " << dir_str << "\n";
+        }
+    }
+    
+    // Print switch states
+    for (int i = 0; i < max_switches; i++)
+    {
+        if (switch_x[i] >= 0 && switch_x[i] < rows && switch_y[i] < cols)
+        {
+            char letter = 'A' + i;
+            string state_label = (switch_state[i] == 0) ? switch_state0[i] : switch_state1[i];
+            cout << "Switch " << letter << " at (" << switch_x[i] << "," << switch_y[i] << ") state: " << state_label << "\n";
         }
     }
     
