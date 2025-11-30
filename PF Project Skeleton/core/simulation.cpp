@@ -46,33 +46,77 @@ void initializeSimulation() {
     // For medium and hard levels, keep original spawn ticks from level file
     if (should_reassign_spawn_ticks)
     {
-        // Reassign spawn ticks to ensure row order: all first row trains spawn before second row, etc.
-        int current_tick = 0;
-        int last_row = -1;
+        // Find unique rows
+        int unique_rows[max_trains];
+        int row_count = 0;
         for (int i = 0; i < total_trains; i++)
         {
             int train_id = train_order[i];
             int train_row = train_x[train_id];
-            
-            if (i == 0)
+            bool found = false;
+            for (int j = 0; j < row_count; j++)
             {
-                train_spawn_tick[train_id] = 0;
-                last_row = train_row;
-                current_tick = 0;
-                continue;
+                if (unique_rows[j] == train_row)
+                {
+                    found = true;
+                    break;
+                }
             }
-            
-            if (train_row != last_row && last_row >= 0)
+            if (!found)
             {
-                current_tick += (total_trains <= 2) ? 4 : 8;
+                unique_rows[row_count] = train_row;
+                row_count++;
             }
-            else
+        }
+        
+        // Round-robin: one train from each row, then cycle back
+        int current_tick = 0;
+        int train_idx_per_row[max_trains];
+        for (int i = 0; i < row_count; i++)
+            train_idx_per_row[i] = 0;
+        
+        int trains_assigned = 0;
+        int round = 0;
+        
+        while (trains_assigned < total_trains)
+        {
+            for (int r = 0; r < row_count && trains_assigned < total_trains; r++)
             {
-                current_tick += 4;
+                int target_row = unique_rows[r];
+                
+                // Find next train from this row
+                for (int i = 0; i < total_trains; i++)
+                {
+                    int train_id = train_order[i];
+                    if (train_x[train_id] == target_row)
+                    {
+                        int row_idx = 0;
+                        for (int j = 0; j < i; j++)
+                        {
+                            if (train_x[train_order[j]] == target_row)
+                                row_idx++;
+                        }
+                        
+                        if (row_idx == train_idx_per_row[r])
+                        {
+                            if (round == 0 && r == 0)
+                            {
+                                train_spawn_tick[train_id] = 0;
+                                current_tick = 0;
+                            }
+                            else
+                            {
+                                current_tick += 4;
+                                train_spawn_tick[train_id] = current_tick;
+                            }
+                            train_idx_per_row[r]++;
+                            trains_assigned++;
+                            break;
+                        }
+                    }
+                }
             }
-            
-            train_spawn_tick[train_id] = current_tick;
-            last_row = train_row;
+            round++;
         }
     }
     for (int i = 0; i < total_trains; i++)

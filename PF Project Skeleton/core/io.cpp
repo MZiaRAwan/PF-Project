@@ -176,6 +176,14 @@ bool loadLevelFile()
             total_switches++;
     }
     
+    if (total_trains > 0 && total_destinations > 0) {
+    for (int i = 0; i < total_trains; i++) {
+        // Assign destination based on train index (round-robin)
+        int dest_idx = i % total_destinations;
+        train_dest_x[i] = dest_X[dest_idx];
+        train_dest_y[i] = dest_Y[dest_idx];
+    }
+}
     file.close();
     grid_loaded = 1;
     return true;
