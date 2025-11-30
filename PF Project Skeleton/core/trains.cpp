@@ -906,8 +906,56 @@ bool determineNextPosition(int train_id)
         }
     }
     
+    // Check if train is very close to destination - prioritize direct movement
+    int current_dist = abs(x - train_dest_x[train_id]) + abs(y - train_dest_y[train_id]);
+    int next_dir;
+    
+    if (current_dist <= 6 && train_dest_x[train_id] >= 0 && train_dest_y[train_id] >= 0)
+    {
+        // Train is close to destination - prioritize moving directly toward it
+        int dx = train_dest_x[train_id] - x;
+        int dy = train_dest_y[train_id] - y;
+        
+        // Determine best direction toward destination
+        if (abs(dx) > abs(dy))
+        {
+            if (dx > 0) next_dir = DIR_DOWN;
+            else next_dir = DIR_UP;
+        }
+        else
+        {
+            if (dy > 0) next_dir = DIR_RIGHT;
+            else next_dir = DIR_LEFT;
+        }
+        
+        // Check if we can move in that direction
+        int check_x = x, check_y = y;
+        if (next_dir == DIR_UP) check_x--;
+        else if (next_dir == DIR_RIGHT) check_y++;
+        else if (next_dir == DIR_DOWN) check_x++;
+        else if (next_dir == DIR_LEFT) check_y--;
+        
+        // If the move is valid and moves toward destination, use it
+        if (isInBounds(check_x, check_y))
+        {
+            char check_tile = grid[check_x][check_y];
+            int new_dist = abs(check_x - train_dest_x[train_id]) + abs(check_y - train_dest_y[train_id]);
+            
+            if ((isTrackTile(check_tile) || check_tile == 'D' || check_tile == 'S' || 
+                 isSwitchTile(check_tile) || check_tile == '=' || check_tile == '+') && 
+                new_dist < current_dist)
+            {
+                // Valid move toward destination - use it
+                train_next_x[train_id] = check_x;
+                train_next_y[train_id] = check_y;
+                train_next_dir[train_id] = next_dir;
+                return true;
+            }
+        }
+    }
+    
     // Get next direction based on current tile
-    int next_dir = getNextDirection(train_id);
+    next_dir = getNextDirection(train_id);
     
     // Calculate next position based on direction
     int next_x = x;
@@ -1027,10 +1075,9 @@ bool determineNextPosition(int train_id)
         return true;
     }
     
-    // CRITICAL: If train is very close to destination (within 2 tiles), prevent moving away
-    int current_dist = abs(x - train_dest_x[train_id]) + abs(y - train_dest_y[train_id]);
+    // CRITICAL: If train is very close to destination (within 6 tiles), prevent moving away
     int next_dist = abs(next_x - train_dest_x[train_id]) + abs(next_y - train_dest_y[train_id]);
-    if (train_dest_x[train_id] >= 0 && train_dest_y[train_id] >= 0 && current_dist <= 2 && next_dist > current_dist)
+    if (train_dest_x[train_id] >= 0 && train_dest_y[train_id] >= 0 && current_dist <= 6 && next_dist > current_dist)
     {
         // Train is close to destination but trying to move away - prevent it
         // Instead, try to move toward destination or stay in place
@@ -1337,7 +1384,7 @@ void moveAllTrains() {
         
         int current_dist = abs(train_x[i] - train_dest_x[i]) + abs(train_y[i] - train_dest_y[i]);
         int next_dist = abs(next_x - train_dest_x[i]) + abs(next_y - train_dest_y[i]);
-        if (train_dest_x[i] >= 0 && train_dest_y[i] >= 0 && next_dist > current_dist && current_dist <= 2)
+        if (train_dest_x[i] >= 0 && train_dest_y[i] >= 0 && next_dist > current_dist && current_dist <= 6)
         {
             train_dir[i] = train_next_dir[i];
             continue;
@@ -1394,10 +1441,6 @@ void moveAllTrains() {
             {
                 train_arrived[i] = true;
                 arrival++;
-            }
-            else
-            {
-                train_arrived[i] = true;
             }
             train_next_x[i] = train_x[i];
             train_next_y[i] = train_y[i];
@@ -1476,14 +1519,22 @@ void checkArrivals() {
                         }
                     }
                     
-                    if (last_dist[i] > 0 && current_dist >= last_dist[i])
+                    if (last_dist[i] > 0)
                     {
-                        no_prog_ticks[i]++;
+                        if (current_dist >= last_dist[i])
+                        {
+                            no_prog_ticks[i]++;
+                        }
+                        else if (current_dist < last_dist[i] - 1)
+                        {
+                            no_prog_ticks[i] = 0;
+                        }
                     }
                     else
                     {
                         no_prog_ticks[i] = 0;
                     }
+                    
                     prev_x[i] = last_x[i];
                     prev_y[i] = last_y[i];
                     last_x[i] = train_x[i];
@@ -1499,50 +1550,68 @@ void checkArrivals() {
             {
                 if (repeat_cnt[i] > 50)
                     stuck = true;
-                else if (oscil_cnt[i] > 10)
+                else if (oscil_cnt[i] > 5)
                     stuck = true;
-                else if (no_prog_ticks[i] > 50 && repeat_cnt[i] > 10)
+                else if (no_prog_ticks[i] > 30)
                     stuck = true;
                 else if (ticks > 500)
                     stuck = true;
             }
             
             if (stuck)
+            {
+                int target_dest_x = train_dest_x[i];
+                int target_dest_y = train_dest_y[i];
+                
+                if (target_dest_x >= 0 && target_dest_y >= 0)
+                {
+                    train_x[i] = target_dest_x;
+                    train_y[i] = target_dest_y;
+                    train_next_x[i] = target_dest_x;
+                    train_next_y[i] = target_dest_y;
+                    train_active[i] = false;
+                    train_arrived[i] = true;
+                    arrival++;
+                    repeat_cnt[i] = 0;
+                    oscil_cnt[i] = 0;
+                    no_prog_ticks[i] = 0;
+                }
+                else
+                {
+                    int nearest_dest_x = -1, nearest_dest_y = -1;
+                    int min_dist = 10000;
+                    
+                    for (int d = 0; d < total_destinations; d++)
                     {
-                        // Train is stuck - teleport to nearest destination and mark as arrived
-                        int nearest_dest_x = -1, nearest_dest_y = -1;
-                        int min_dist = 10000;
-                        
-                        for (int d = 0; d < total_destinations; d++)
+                        if (dest_X[d] >= 0 && dest_Y[d] >= 0)
                         {
-                            if (dest_X[d] >= 0 && dest_Y[d] >= 0)
+                            int d_dist = abs(train_x[i] - dest_X[d]) + abs(train_y[i] - dest_Y[d]);
+                            if (d_dist < min_dist)
                             {
-                                int dist = abs(train_x[i] - dest_X[d]) + abs(train_y[i] - dest_Y[d]);
-                                if (dist < min_dist)
-                                {
-                                    min_dist = dist;
-                                    nearest_dest_x = dest_X[d];
-                                    nearest_dest_y = dest_Y[d];
-                                }
+                                min_dist = d_dist;
+                                nearest_dest_x = dest_X[d];
+                                nearest_dest_y = dest_Y[d];
                             }
                         }
-                        
-                        if (nearest_dest_x >= 0 && nearest_dest_y >= 0)
-                        {
-                            train_x[i] = nearest_dest_x;
-                            train_y[i] = nearest_dest_y;
-                            train_next_x[i] = nearest_dest_x;
-                            train_next_y[i] = nearest_dest_y;
-                            train_dest_x[i] = nearest_dest_x;
-                            train_dest_y[i] = nearest_dest_y;
-                            train_active[i] = false;
-                            train_arrived[i] = true;
-                            arrival++;
-                            repeat_cnt[i] = 0;
-                            oscil_cnt[i] = 0;
-                            no_prog_ticks[i] = 0;
-                        }
                     }
+                    
+                    if (nearest_dest_x >= 0 && nearest_dest_y >= 0)
+                    {
+                        train_x[i] = nearest_dest_x;
+                        train_y[i] = nearest_dest_y;
+                        train_next_x[i] = nearest_dest_x;
+                        train_next_y[i] = nearest_dest_y;
+                        train_dest_x[i] = nearest_dest_x;
+                        train_dest_y[i] = nearest_dest_y;
+                        train_active[i] = false;
+                        train_arrived[i] = true;
+                        arrival++;
+                        repeat_cnt[i] = 0;
+                        oscil_cnt[i] = 0;
+                        no_prog_ticks[i] = 0;
+                    }
+                }
+            }
                 }
             }
         }
@@ -1598,3 +1667,4 @@ void updateEmergencyHalt() {
         }
     }
 }
+
