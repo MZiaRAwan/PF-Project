@@ -66,6 +66,7 @@ extern int train_x[max_trains];
 extern int train_y[max_trains];
 extern int train_dir[max_trains];
 extern bool train_active[max_trains];
+extern bool train_arrived[max_trains];  // chreck if train has as arrived
 extern int train_spawn_tick[max_trains];
 extern int train_next_x[max_trains];
 extern int train_next_y[max_trains];

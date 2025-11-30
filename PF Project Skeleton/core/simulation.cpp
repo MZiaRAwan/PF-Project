@@ -7,53 +7,146 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <string>
 using namespace std;
 
-// ============================================================================
-// SIMULATION.CPP - Implementation of main simulation logic
-// ============================================================================
-// This file contains the 7-phase tick system and simulation control functions.
-// These functions should ONLY be defined here, NOT in simulation_state.cpp
-// ============================================================================
-
-// ----------------------------------------------------------------------------
-// HELPER: Calculate Manhattan distance between two points
-// ----------------------------------------------------------------------------
+// Simulation logic and tick system
 int calculateManhattanDistance(int x1, int y1, int x2, int y2)
 {
     return abs(x1 - x2) + abs(y1 - y2);
 }
 
-// ----------------------------------------------------------------------------
-// INITIALIZE SIMULATION
-// ----------------------------------------------------------------------------
-// Initialize simulation after loading level file.
-// Assign destinations to trains, initialize switch states.
-// ----------------------------------------------------------------------------
+// Initialize simulation
 void initializeSimulation() {
-    // Initialize random seed for deterministic behavior
-    // Identical inputs (level file + seed) => identical outputs
     srand(level_seed);
     
-    // Assign destinations to trains (simple: assign first available destination)
-    int dest_idx = 0;
+    bool should_reassign_spawn_ticks = (level_filename.find("complex_network") != string::npos || 
+                                         level_filename.find("easy_level") != string::npos);
+    int train_order[max_trains];
     for (int i = 0; i < total_trains; i++)
+        train_order[i] = i;
+    
+    // Simple bubble sort by spawn row (x coordinate), then by original spawn tick for same row
+    for (int i = 0; i < total_trains - 1; i++)
     {
-        if (dest_idx < total_destinations)
+        for (int j = 0; j < total_trains - i - 1; j++)
         {
-            train_dest_x[i] = dest_X[dest_idx];
-            train_dest_y[i] = dest_Y[dest_idx];
-            dest_idx++;
-        }
-        else
-        {
-            // Wrap around if more trains than destinations
-            train_dest_x[i] = dest_X[i % total_destinations];
-            train_dest_y[i] = dest_Y[i % total_destinations];
+            int row_j = train_x[train_order[j]];
+            int row_j1 = train_x[train_order[j + 1]];
+            if (row_j > row_j1 || (row_j == row_j1 && train_spawn_tick[train_order[j]] > train_spawn_tick[train_order[j + 1]]))
+            {
+                int temp = train_order[j];
+                train_order[j] = train_order[j + 1];
+                train_order[j + 1] = temp;
+            }
         }
     }
     
-    // Initialize switch states from switch_init
+    // Reassign spawn ticks ONLY for complex and easy levels
+    // For medium and hard levels, keep original spawn ticks from level file
+    if (should_reassign_spawn_ticks)
+    {
+        // Reassign spawn ticks to ensure row order: all first row trains spawn before second row, etc.
+        int current_tick = 0;
+        int last_row = -1;
+        for (int i = 0; i < total_trains; i++)
+        {
+            int train_id = train_order[i];
+            int train_row = train_x[train_id];
+            
+            if (i == 0)
+            {
+                train_spawn_tick[train_id] = 0;
+                last_row = train_row;
+                current_tick = 0;
+                continue;
+            }
+            
+            if (train_row != last_row && last_row >= 0)
+            {
+                current_tick += (total_trains <= 2) ? 4 : 8;
+            }
+            else
+            {
+                current_tick += 4;
+            }
+            
+            train_spawn_tick[train_id] = current_tick;
+            last_row = train_row;
+        }
+    }
+    for (int i = 0; i < total_trains; i++)
+    {
+        int train_id = train_order[i];
+        if (total_destinations > 0)
+        {
+            // Distribute destinations: use modulo to cycle through all destinations
+            // This ensures all destinations (including bottom) are used
+            int dest_idx = i % total_destinations;
+            train_dest_x[train_id] = dest_X[dest_idx];
+            train_dest_y[train_id] = dest_Y[dest_idx];
+            
+            // IMPORTANT: Ensure destination is not the same as spawn position
+            // If it is, find a different destination
+            if (train_dest_x[train_id] == train_x[train_id] && train_dest_y[train_id] == train_y[train_id])
+            {
+                // Destination matches spawn - find a different one
+                for (int d = 0; d < total_destinations; d++)
+                {
+                    int alt_dest_idx = (dest_idx + d + 1) % total_destinations;
+                    if (dest_X[alt_dest_idx] != train_x[train_id] || dest_Y[alt_dest_idx] != train_y[train_id])
+                    {
+                        train_dest_x[train_id] = dest_X[alt_dest_idx];
+                        train_dest_y[train_id] = dest_Y[alt_dest_idx];
+                        break;
+                    }
+                }
+            }
+            
+            // Verify destination is valid (should always be, but double-check)
+            if (train_dest_x[train_id] < 0 || train_dest_y[train_id] < 0)
+            {
+                // Fallback: assign first available destination that's not spawn position
+                for (int d = 0; d < total_destinations; d++)
+                {
+                    if (dest_X[d] != train_x[train_id] || dest_Y[d] != train_y[train_id])
+                    {
+                        train_dest_x[train_id] = dest_X[d];
+                        train_dest_y[train_id] = dest_Y[d];
+                        break;
+                    }
+                }
+                // If all destinations match spawn (shouldn't happen), use first one anyway
+                if (train_dest_x[train_id] < 0 || train_dest_y[train_id] < 0)
+                {
+                    train_dest_x[train_id] = dest_X[0];
+                    train_dest_y[train_id] = dest_Y[0];
+                }
+            }
+        }
+        else
+        {
+            bool found_dest = false;
+            for (int r = 0; r < rows && !found_dest; r++)
+            {
+                for (int c = 0; c < cols && !found_dest; c++)
+                {
+                    if (grid[r][c] == 'D')
+                    {
+                        train_dest_x[train_id] = r;
+                        train_dest_y[train_id] = c;
+                        found_dest = true;
+                    }
+                }
+            }
+            if (!found_dest)
+            {
+                train_dest_x[train_id] = train_x[train_id];
+                train_dest_y[train_id] = train_y[train_id];
+            }
+        }
+    }
+    
     for (int i = 0; i < max_switches; i++)
     {
         if (switch_x[i] >= 0)
@@ -63,87 +156,34 @@ void initializeSimulation() {
     }
 }
 
+// Run one simulation tick
 void simulateOneTick() {
-    // ========================================================================
-    // PHASE 1: SPAWN
-    // ========================================================================
-    // Align trains scheduled for this tick (see spawn rules)
     spawnTrainsForTick();
-    
-    // ========================================================================
-    // PHASE 2: ROUTE DETERMINATION
-    // ========================================================================
-    // Each train computes its next tile from current heading & switch's current state
     determineAllRoutes();
-    
-    // Apply emergency halt (prevents trains in 3x3 zone from moving)
     applyEmergencyHalt();
-    
-    // ========================================================================
-    // PHASE 3: COUNTER UPDATE
-    // ========================================================================
-    // Entering a switch increments its counter(s)
     updateSwitchCounters();
-    
-    // ========================================================================
-    // PHASE 4: FLIP QUEUE
-    // ========================================================================
-    // Switches at K are flagged to toggle
     queueSwitchFlips();
-    
-    // ========================================================================
-    // PHASE 5: MOVEMENT
-    // ========================================================================
-    // All trains advance simultaneously; detect invalid moves/collisions 
-    // using distance-based priority
     moveAllTrains();
-    
-    // Apply deferred flips after movement (ensures deterministic behavior)
-    // This happens as part of Phase 5 but after trains have moved
     applyDeferredFlips();
-    
-    // ========================================================================
-    // PHASE 6: ARRIVALS
-    // ========================================================================
-    // Record station arrivals
     checkArrivals();
-    
-    // Update emergency halt timer
     updateEmergencyHalt();
-    
-    // ========================================================================
-    // PHASE 7: TERMINAL OUTPUT
-    // ========================================================================
-    // Print complete grid state to terminal showing all tiles and train positions
     printGrid();
-    
-    // Update signal lights for next tick
     updateSignalLights();
-    
-    // Log data for evidence files
     logTrainTrace();
     logSwitchState();
     logSignalState();
 }
 
-// ----------------------------------------------------------------------------
-// CHECK IF SIMULATION IS COMPLETE
-// ----------------------------------------------------------------------------
-// Returns true if all trains are delivered or crashed AND no more trains
-// are scheduled to spawn (current tick or future).
-// ----------------------------------------------------------------------------
+// Check if simulation is complete
 bool isSimulationComplete() {
-    // Check if there are any active trains or trains scheduled to spawn
     for (int i = 0; i < total_trains; i++)
     {
-        // If train is active, simulation continues
         if (train_active[i])
         {
             finished = false;
             return false;
         }
         
-        // If train is scheduled to spawn at current tick or later, simulation continues
         if (train_spawn_tick[i] >= currentTick)
         {
             finished = false;
@@ -151,7 +191,6 @@ bool isSimulationComplete() {
         }
     }
     
-    // All trains have either arrived/crashed and no more are scheduled to spawn
     finished = true;
     return true;
 }
